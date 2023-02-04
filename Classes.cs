@@ -169,6 +169,7 @@ namespace LPadServer
         double[,] smoothAccWU;
         double[,] accWaterUse;
         //double[,] smoothDailyWU;
+        double[,] metData;
 
         //   int[] hourTimes;
         //
@@ -202,12 +203,20 @@ namespace LPadServer
             count = new int[] { nRecs };
             status = NetCDF.nc_get_vara_int(ncid, variableID, start, count, times);
 
+            //move 1 dim into 2 dim array         
+            weights = twoDim(wts, nRecs, nPots);
+
+            // Load met data
+            double[] met = new double[nRecs * 3];    /* array to hold metData */
+            count = new int[] { nRecs, 3 };
+            status = NetCDF.nc_inq_varid(ncid, "MetData", ref variableID);
+            status = NetCDF.nc_get_vara_double(ncid, variableID, start, count, met);
+
             status = NetCDF.nc_close(ncid);
 
-
             //move 1 dim into 2 dim array         
-
-            weights = twoDim(wts, nRecs, nPots);
+            metData = twoDim(met, nRecs, 3);
+            
 
         }
 
@@ -216,7 +225,7 @@ namespace LPadServer
             double[,] twoD = new double[d1, d2];
             for (int i = 0; i < d1; i++)
                 for (int j = 0; j < d2; j++)
-                    twoD[i, j] = oneDim[i * nPots + j];
+                    twoD[i, j] = oneDim[i * d2 + j];
             return twoD;
         }
 
@@ -380,18 +389,26 @@ namespace LPadServer
             {
                 DateTime dt = new DateTime(2010, 1, 1).AddMinutes(times[rec]);
                 string line = dt.ToString("d/MM/yyyy h:mm:ss tt");
-                for (int pot = 0; pot < nPots; pot++)
+                if (variableName == "MetData")
                 {
-                    if (variableName == "Weights")
-                        line += "," + weights[rec, pot].ToString("F2");
-                    else if (variableName == "WaterUse")
-                        line += "," + waterUse[rec, pot].ToString("F2");
-                    else if (variableName == "Smoothed")
-                        line += "," + smoothAccWU[rec, pot].ToString("F2");
-                    else if (variableName == "Accum")
-                        line += "," + accWaterUse[rec, pot].ToString("F2");
-                    //   else if (variableName == "Daily")
-                    //     line += "," + smoothDailyWU[rec, pot].ToString("F2");
+                    for (int i = 0; i < 3; i++)
+                        line += "," + metData[rec, i].ToString("F2");
+                }
+                else
+                {
+                    for (int pot = 0; pot < nPots; pot++)
+                    {
+                        if (variableName == "Weights")
+                            line += "," + weights[rec, pot].ToString("F2");
+                        else if (variableName == "WaterUse")
+                            line += "," + waterUse[rec, pot].ToString("F2");
+                        else if (variableName == "Smoothed")
+                            line += "," + smoothAccWU[rec, pot].ToString("F2");
+                        else if (variableName == "Accum")
+                            line += "," + accWaterUse[rec, pot].ToString("F2");
+                        //   else if (variableName == "Daily")
+                        //     line += "," + smoothDailyWU[rec, pot].ToString("F2");
+                    }
                 }
                 File.AppendAllText(outFileName, line + Environment.NewLine);
             }
