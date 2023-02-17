@@ -170,6 +170,7 @@ namespace LPadServer
         double[,] accWaterUse;
         //double[,] smoothDailyWU;
         double[,] metData;
+        double[,] extMetData;
 
         //   int[] hourTimes;
         //
@@ -212,11 +213,17 @@ namespace LPadServer
             status = NetCDF.nc_inq_varid(ncid, "MetData", ref variableID);
             status = NetCDF.nc_get_vara_double(ncid, variableID, start, count, met);
 
-            status = NetCDF.nc_close(ncid);
-
             //move 1 dim into 2 dim array         
             metData = twoDim(met, nRecs, 3);
-            
+
+            // read Ext met data
+            met = new double[nRecs * 3];
+            status = NetCDF.nc_inq_varid(ncid, "MetDataExt", ref variableID);
+            status = NetCDF.nc_get_vara_double(ncid, variableID, start, count, met);
+            extMetData = twoDim(met, nRecs, 3);
+
+            status = NetCDF.nc_close(ncid);
+
 
         }
 
@@ -393,6 +400,8 @@ namespace LPadServer
                 {
                     for (int i = 0; i < 3; i++)
                         line += "," + metData[rec, i].ToString("F2");
+                    for (int i = 0; i < 3; i++)
+                        line += "," + extMetData[rec, i].ToString("F2");
                 }
                 else
                 {

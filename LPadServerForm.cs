@@ -230,8 +230,8 @@ namespace LPadServer
             status = NetCDF.nc_def_dim(ncid, "PotNo", nPots, ref dimensionIDs[1]);
             status = NetCDF.nc_def_dim(ncid, "TableNo", nTables, ref dimensionIDs[2]);
             status = NetCDF.nc_def_dim(ncid, "Met", 3, ref dimensionIDs[3]);        // humidity, temperature and radiation inside
-                                                                                    //         status = NetCDF.nc_def_dim(ncid, "MetExt", 3, ref dimensionIDs[3]);        // humidity, temperature and radiation externally
-                                                                                    //         status = NetCDF.nc_def_dim(ncid, "RTD", 6, ref dimensionIDs[4]);        // 6 temperature devices
+            status = NetCDF.nc_def_dim(ncid, "MetExt", 3, ref dimensionIDs[3]);        // humidity, temperature and radiation externally
+                                                                                       //         status = NetCDF.nc_def_dim(ncid, "RTD", 6, ref dimensionIDs[4]);        // 6 temperature devices
 
             // add variables
             int _varID = 0;
@@ -246,8 +246,8 @@ namespace LPadServer
             int[] metDim = new int[] { dimensionIDs[0], dimensionIDs[3] };
             status = NetCDF.nc_def_var(ncid, "MetData", NetCDF.nc_type.NC_FLOAT, 2, metDim, ref _varID);
 
-            //         int[] metExtDim = new int[] { dimensionIDs[0], dimensionIDs[3] };
-            //         status = NetCDF.nc_def_var(ncid, "MetDataExt", NetCDF.nc_type.NC_FLOAT, 2, metDim, ref _varID);
+            int[] metExtDim = new int[] { dimensionIDs[0], dimensionIDs[3] };
+            status = NetCDF.nc_def_var(ncid, "MetDataExt", NetCDF.nc_type.NC_FLOAT, 2, metDim, ref _varID);
 
             // add attributes
             string attr = "LPAD_Experiment_Data";
@@ -276,7 +276,7 @@ namespace LPadServer
 
             int[] times = new int[nRecords];              // array to hold time
             double[] met = new double[nRecords * 3];      /* array to hold environment */
-            //         double[] metExt = new double[nRecords * 3];      /* array to hold external environment */
+            double[] metExt = new double[nRecords * 3];      /* array to hold external environment */
 
             for (int i = 0; i < nRecords; i++)
             {
@@ -289,8 +289,8 @@ namespace LPadServer
                     wts[i * nPots + j] = Convert.ToDouble(vals[j + 1]);
                 for (int j = 0; j < 3; j++)   // met data
                     met[i * 3 + j] = Convert.ToDouble(vals[j + nPots + 1]);
-                //for (int j = 0; j < 3; j++)   // External met data
-                //   metExt[i * 3 + j] = Convert.ToDouble(vals[j + nPots + 4]);
+                for (int j = 0; j < 3; j++)   // External met data
+                   metExt[i * 3 + j] = Convert.ToDouble(vals[j + nPots + 4]);
 
                 //int rtdStart = nData - 6;
                 //for (int j = 0; j < nRTDs; j++) // RTD temperatures - last 6
@@ -329,9 +329,9 @@ namespace LPadServer
             status = NetCDF.nc_put_vara_double(ncid, variableID, start, count, met);
 
             //count = new int[] { nRecords, 3 };
-            //status = NetCDF.nc_inq_varid(ncid, "MetDataExt", ref variableID);
-            //status = NetCDF.nc_put_vara_double(ncid, variableID, start, count, metExt);
-            //NetCDF.nc_sync(ncid);
+            status = NetCDF.nc_inq_varid(ncid, "MetDataExt", ref variableID);
+            status = NetCDF.nc_put_vara_double(ncid, variableID, start, count, metExt);
+            NetCDF.nc_sync(ncid);
 
             status = NetCDF.nc_close(ncid);
             return status;
